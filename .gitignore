@@ -3,4 +3,5 @@ venv
 TRELLIS
 node_modules
 weights
+outputs
 
