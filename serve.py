@@ -16,7 +16,7 @@ def get_args():
     parser.add_argument("--mv23d_cfg_path", default="./svrm/configs/svrm.yaml", type=str)
     parser.add_argument("--mv23d_ckt_path", default="weights/svrm/svrm.safetensors", type=str)
     parser.add_argument("--text2image_path", default="weights/hunyuanDiT", type=str)
-    parser.add_argument("--save_folder", default="outputs/", type=str)
+    parser.add_argument("--save_folder", default="/workspace/DB", type=str)
     parser.add_argument("--device", default="cuda:0", type=str)
     parser.add_argument("--t2i_seed", default=42, type=int)
     parser.add_argument("--t2i_steps", default=25, type=int)
@@ -68,8 +68,8 @@ def gen_3d(image, output_folder):
     glb.export(os.path.join(output_folder, "mesh.glb"))
 
 @app.post("/generate_from_text")
-async def text_to_3d(prompt: str = Body()):
-    output_folder = os.path.join(args.save_folder, "text_to_3d")
+async def text_to_3d(prompt: str = Body(), output_dir: str = Body()):
+    output_folder = output_dir
     os.makedirs(output_folder, exist_ok=True)
 
     # Stage 1: Text to Image
@@ -81,7 +81,6 @@ async def text_to_3d(prompt: str = Body()):
     )
     res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
 
-    # process_image_to_3d(res_rgb_pil, output_folder)
     gen_3d(res_rgb_pil, output_folder)
     
     print(f"Successfully generated: {output_folder}")
@@ -89,22 +88,9 @@ async def text_to_3d(prompt: str = Body()):
 
     return {"success": True, "path": output_folder}
 
-@app.post("/generate_from_image")
-async def image_to_3d(image_path: str):
-    if not os.path.exists(image_path):
-        raise HTTPException(status_code=400, detail="Image file not found")
 
-    output_folder = os.path.join(args.save_folder, "image_to_3d")
-    os.makedirs(output_folder, exist_ok=True)
-
-    # Load Image
-    res_rgb_pil = Image.open(image_path)
-    process_image_to_3d(res_rgb_pil, output_folder)
-
-    return {"message": "3D model generated successfully from image", "output_folder": output_folder}
-
-def _text_to_3d(prompt: str):
-    output_folder = os.path.join(args.save_folder, "test")
+def _text_to_3d(prompt: str, output_dir: str):
+    output_folder = output_dir
     os.makedirs(output_folder, exist_ok=True)
 
     # Stage 1: Text to Image
@@ -112,11 +98,10 @@ def _text_to_3d(prompt: str):
     res_rgb_pil = text_to_image_model(
         prompt,
         seed=args.t2i_seed,
-        steps=25
+        steps=args.t2i_steps
     )
     res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
 
-    # process_image_to_3d(res_rgb_pil, output_folder)
     gen_3d(res_rgb_pil, output_folder)
     
     print(f"Successfully generated: {output_folder}")
@@ -127,11 +112,11 @@ def _text_to_3d(prompt: str):
 if __name__ == "__main__":
     # image = Image.open("bike.png")
     # gen_3d(image, "outputs")
-    prompt = "abandoned mining cart with rust damage and coal residue"
-    extra_prompts = "Angled front view, solid color background, 3d model, high quality"
-    enhanced_prompt = f"{prompt}, {extra_prompts}"
-    _text_to_3d(enhanced_prompt)
-    # uvicorn.run(app, host="0.0.0.0", port=args.port)
+    # prompt = "mystical sundial with constellation patterns and gem inlays"
+    # extra_prompts = "Angled front view, solid color background, 3d model, high quality"
+    # enhanced_prompt = f"{prompt}, {extra_prompts}"
+    # _text_to_3d(enhanced_prompt, "./")
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
 
 
 
