@@ -4,9 +4,15 @@ import time
 from PIL import Image
 import argparse
 from fastapi import FastAPI, HTTPException, Body
+
 import uvicorn
 
 from infer import Text2Image, Removebg, Image2Views, Views2Mesh, GifRenderer
+from pydantic import BaseModel
+
+class RequestData(BaseModel):
+    prompt: str
+    output_dir: str
 
 app = FastAPI()
 
@@ -68,8 +74,10 @@ def gen_3d(image, output_folder):
     glb.export(os.path.join(output_folder, "mesh.glb"))
 
 @app.post("/generate_from_text")
-async def text_to_3d(prompt: str = Body(), output_dir: str = Body()):
-    output_folder = output_dir
+async def text_to_3d(data: RequestData):
+    print(data)
+    output_folder = data.output_dir
+    prompt = data.prompt
     os.makedirs(output_folder, exist_ok=True)
 
     # Stage 1: Text to Image
@@ -80,13 +88,13 @@ async def text_to_3d(prompt: str = Body(), output_dir: str = Body()):
         steps=args.t2i_steps
     )
     res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
-
-    gen_3d(res_rgb_pil, output_folder)
-    
-    print(f"Successfully generated: {output_folder}")
-    print(f"Generation time: {time.time() - start}")
-
-    return {"success": True, "path": output_folder}
+    try:
+        gen_3d(res_rgb_pil, output_folder)
+        print(f"Successfully generated: {output_folder}")
+        print(f"Generation time: {time.time() - start}")
+        return {"success": True, "path": output_folder}
+    except:
+        return {"success": False, "path": output_folder}
 
 
 def _text_to_3d(prompt: str, output_dir: str):
