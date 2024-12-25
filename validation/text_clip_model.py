@@ -13,10 +13,10 @@ class TextModel:
         
     def compute_clip_similarity_prompt(self, prompt: str, img_path: str):
         image = Image.open(img_path)  # Change to your image path
-        image = self.preprocess(image).unsqueeze(0)
+        image = self.preprocess(image).unsqueeze(0).to(device)
         
         labels_list = [prompt]
-        text = self.tokenizer(labels_list)
+        text = self.tokenizer(labels_list).to(device)
         
         with torch.no_grad():
             image_features = self.model.encode_image(image)
@@ -29,7 +29,7 @@ class TextModel:
     def load_model(self, model: str = "ViT-B-32", pretrained: str = "laion2b_s34b_b79k"):
         try:
             self.model, _, self.preprocess = open_clip.create_model_and_transforms(model, pretrained=pretrained)
-            self.model.eval()
+            self.model.eval().to(device)
             self.tokenizer = open_clip.get_tokenizer(model)
         except Exception as e:
             print("Loading open clip model error")

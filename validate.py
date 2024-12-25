@@ -1,15 +1,13 @@
 import os
 import time
 import numpy as np
-from fastapi import HTTPException
-
 from validation.text_clip_model import TextModel
 from validation.image_clip_model import ImageModel
 from validation.quality_model import QualityModel
 
 from rendering import render, load_image
 
-DATA_DIR = 'outputs/test'
+DATA_DIR = '/workspace/DB'
 EXTRA_PROMPT = 'anime'
 
 
@@ -31,16 +29,16 @@ def init_model():
     image_model.load_model()
     quality_model.load_model()
 
-def validate(prompt: str):
+def validate(prompt: str, datadir: str):
     try:
         print("----------------- Validation started -----------------")
         start = time.time()
         prompt = prompt + " " + EXTRA_PROMPT
         id = 0
         
-        rendered_images, before_images = render(prompt)
+        rendered_images, before_images = render(prompt, datadir)
         
-        prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
+        prev_img_path = os.path.join(datadir, f"img.jpg")
         prev_img = load_image(prev_img_path)
         
         Q0 = quality_model.compute_quality(prev_img_path)
@@ -48,8 +46,10 @@ def validate(prompt: str):
         
         S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
         print(f"S0: {S0} - taken time: {time.time() - start}")
+        return Q0, S0
         if S0 < 0.23:
             return 0
+        
             
         Ri = detect_outliers([image_model.compute_clip_similarity(prev_img, img) for img in rendered_images])
         
@@ -106,19 +106,34 @@ def detect_outliers(data, threshold=1.1):
 
 if __name__ == "__main__":
     init_model()
-    prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
+    file_name = "fuck_prompts.txt"
+    # prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
     
-    prev_img = load_image(prev_img_path)
-    print(prev_img_path)
-    Q0 = quality_model.compute_quality(prev_img_path)
-    print(f"Q0: {Q0}")
+    # prev_img = load_image(prev_img_path)
+    # print(prev_img_path)
+    # Q0 = quality_model.compute_quality(prev_img_path)
+    # print(f"Q0: {Q0}")
 
-    # for i in range(15):
-    #     prev_img_path = f"validation/output_images/image_{24*i}.png"
-    #     prev_img = load_image(prev_img_path)
-    #     Q0 = quality_model.compute_quality(prev_img_path)
-    #     print(f"Q0: {Q0}")
-    # prompt = "abandoned mining cart with rust damage and coal residue"
-    prompt = "abandoned mining cart with rust damage and coal residue"
-    # validate(prompt)
+    prompt = "quantum storage cube with fractured surface and energy leak"
+
+    
+    # Get 1-depth subdirectories
+    for item in os.listdir(DATA_DIR):
+
+        item_path = os.path.join(DATA_DIR, item)
+        # Check if the item is a directory
+        if not os.path.isdir(item_path):
+            continue
+        sub_path = os.path.join(DATA_DIR, item_path)
+
+        with open(os.path.join(sub_path, "prompt.txt"), "r") as prompt_file:
+            prompt = prompt_file.read()
+        prompt = prompt.strip()
+        print(prompt)
+        Q0, S0 = validate(prompt, sub_path)
+        if S0 < 0.23:
+            file = open(file_name, "a")
+            file.write(f"{prompt}\n")
+            file.close()
+
     # rendered_images, before_images = render(prompt)

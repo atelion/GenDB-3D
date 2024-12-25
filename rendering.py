@@ -16,7 +16,7 @@ from fastapi import  HTTPException
 from torchvision import transforms
 from pytorch3d.renderer import TexturesUV, TexturesVertex
 
-DATA_DIR = './outputs/test'
+DATA_DIR = '/workspace/DB/0a0a62666b60450f2fe475b432c3606383e0c33c8b6d5ead76248cf468448601'
 OUTPUT_DIR = './validation/output_images'
 
 if not os.path.exists(OUTPUT_DIR):
@@ -168,12 +168,12 @@ def render_mesh(obj_file: str, distance: float = 0.75, elevation: float = 15, az
         raise HTTPException(status_code=500, detail=str(e))
 
 def render(
-    prompt: str,
+    prompt: str, datadir: str,
 ):
     print(f"prompt: {prompt}")
     
     # Use the uploaded objective file for rendering
-    obj_file = os.path.join(DATA_DIR, f"mesh.glb")
+    obj_file = os.path.join(datadir, f"mesh.glb")
 
     # Print the file size
     image_files = render_mesh(obj_file)
