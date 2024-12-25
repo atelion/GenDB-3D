@@ -5,3 +5,4 @@ node_modules
 weights
 outputs
 vali-venv
+validation/output_images
