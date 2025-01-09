@@ -105,14 +105,18 @@ def detect_outliers(data, threshold=1.1):
     
 
 if __name__ == "__main__":
+    start = time.time()
     init_model()
+    DATA_DIR = "/workspace/"
+    prompt = "ice cream parlor counter with marble top and vintage fixtures"
     prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
     
     prev_img = load_image(prev_img_path)
     print(prev_img_path)
     Q0 = quality_model.compute_quality(prev_img_path)
     print(f"Q0: {Q0}")
-
+    S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
+    print(f"S0: {S0} - taken time: {time.time() - start}")
     # for i in range(15):
     #     prev_img_path = f"validation/output_images/image_{24*i}.png"
     #     prev_img = load_image(prev_img_path)

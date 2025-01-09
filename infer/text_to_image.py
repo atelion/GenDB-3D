@@ -29,11 +29,13 @@ class Text2Image():
     @auto_amp_inference
     def __call__(self, *args, **kwargs):
         if self.save_memory:
+            # print("------------------Not Direct call-------------------")
             self.pipe = self.pipe.to(self.device)
             torch.cuda.empty_cache()
             res = self.call(*args, **kwargs)
             self.pipe = self.pipe.to("cpu")
         else:
+            # print("------------------Direct call-------------------")
             res = self.call(*args, **kwargs)
         torch.cuda.empty_cache()
         return res
@@ -46,11 +48,12 @@ class Text2Image():
                 steps: int
             return:
                 rgb: PIL.Image
-        '''
+        '''        
         prompt = prompt + ",白色背景,3D风格,最佳质量"
         seed_everything(seed)
         generator = torch.Generator(device=self.device)
         if seed is not None: generator = generator.manual_seed(int(seed))
+        self.pipe = self.pipe.to("cuda")
         rgb = self.pipe(prompt=prompt, negative_prompt=self.neg_txt, num_inference_steps=steps, 
             pag_scale=1.3, width=1024, height=1024, generator=generator, return_dict=False)[0][0]
         torch.cuda.empty_cache()
