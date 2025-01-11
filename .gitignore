@@ -6,3 +6,5 @@ weights
 outputs
 vali-venv
 validation/output_images
+img.jpg
+mesh.glb
