@@ -5,3 +5,9 @@ node_modules
 weights
 outputs
 vali-venv
+validation/output_images
+validation/__pycache__
+img.jpg
+img_.jpg
+mesh.glb
+Extra

@@ -1,15 +1,15 @@
 import os
 import time
 import numpy as np
-from fastapi import HTTPException
-
 from validation.text_clip_model import TextModel
 from validation.image_clip_model import ImageModel
 from validation.quality_model import QualityModel
+from fastapi import FastAPI, HTTPException, Body
 
 from rendering import render, load_image
+from pydantic import BaseModel
+import uvicorn
 
-DATA_DIR = 'outputs/test'
 EXTRA_PROMPT = 'anime'
 
 
@@ -17,7 +17,14 @@ text_model = TextModel()
 image_model = ImageModel()
 quality_model = QualityModel()
 
+class RequestData(BaseModel):
+    prompt: str
+    DATA_DIR: str
 
+class ValidateResponse(BaseModel):
+    score: float
+
+app = FastAPI()
         
 def init_model():
     print("loading models")
@@ -31,26 +38,31 @@ def init_model():
     image_model.load_model()
     quality_model.load_model()
 
-def validate(prompt: str):
+@app.post("/validation")
+async def validate(data: RequestData):
+    print(data)
+    datadir = data.DATA_DIR
+    prompt = data.prompt
     try:
-        print("----------------- Validation started -----------------")
+        print(f"----------------- Validation started : {prompt} -----------------")
         start = time.time()
         prompt = prompt + " " + EXTRA_PROMPT
         id = 0
-        
         rendered_images, before_images = render(prompt)
-        
-        prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
+
+        prev_img_path = os.path.join(datadir, f"img.jpg")
         prev_img = load_image(prev_img_path)
         
         Q0 = quality_model.compute_quality(prev_img_path)
         print(f"Q0: {Q0}")
         
-        # S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
-        S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path)
+        S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
+        print(f"S0: {S0}")
+        return {"Q0": Q0, "S0": S0}
         print(f"S0: {S0} - taken time: {time.time() - start}")
-        # if S0 < 0.23:
-            # return 0
+        print(f"S0: {S0} - taken time: {time.time() - start}")
+        if S0 < 0.23:
+            return 0
             
         Ri = detect_outliers([image_model.compute_clip_similarity(prev_img, img) for img in rendered_images])
         
@@ -106,26 +118,6 @@ def detect_outliers(data, threshold=1.1):
     
 
 if __name__ == "__main__":
-    
     init_model()
-    DATA_DIR = "/workspace/GenDB-3D"
-    # prompt = "ornate elven fountain with pearl inlays and flowing water effects"
-    # prompt = "enchanted sword with glowing runes and crystalline hilt"
-    # prompt = "cyberpunk vending machine with holographic display and neon trim"
-    prompt = "abandoned subway turnstile with rust stains and peeling paint"
-    prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
-    # start = time.time()
-    # prev_img = load_image(prev_img_path)
-    # print(prev_img_path)
-    Q0 = quality_model.compute_quality(prev_img_path)
-    print(f"Q0: {Q0}")
-    # S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
-    # S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path)
-    # print(f"S0: {S0} - taken time: {time.time() - start}")
-    
-    # prompt = "ornate elven fountain with pearl inlays and flowing water effects"
-    # prompt = "enchanted sword with glowing runes and crystalline hilt"
-    # prompt = "cyberpunk vending machine with holographic display and neon trim"
-    # prompt = "steampunk pocket watch with brass gears and ticking mechanisms"
-    validate(prompt)
-    # rendered_images, before_images = render(prompt)
+    port = 8094
+    uvicorn.run(app, host="0.0.0.0", port=port)

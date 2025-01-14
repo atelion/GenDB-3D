@@ -16,7 +16,8 @@ from fastapi import  HTTPException
 from torchvision import transforms
 from pytorch3d.renderer import TexturesUV, TexturesVertex
 
-DATA_DIR = './outputs/test'
+# DATA_DIR = './outputs/test'
+DATA_DIR = '/workspace/GenDB-3D'
 OUTPUT_DIR = './validation/output_images'
 
 if not os.path.exists(OUTPUT_DIR):
