@@ -163,7 +163,7 @@ async def create_to_3d_shits(data: RequestData):
         )
         res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
         validation_url = urllib.parse.urljoin("http://127.0.0.1:8094", "/validation/")
-        validation_timeout = 20
+        validation_timeout = 100
         try:
             result = await validate(validation_url=validation_url, timeout=validation_timeout, prompt=prompt, DATA_DIR=output_folder)
             Q0 = result["Q0"]

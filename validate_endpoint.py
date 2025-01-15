@@ -47,17 +47,16 @@ async def validate(data: RequestData):
         print(f"----------------- Validation started : {prompt} -----------------")
         start = time.time()
         prompt = prompt + " " + EXTRA_PROMPT
-        id = 0
-        rendered_images, before_images = render(prompt)
+        # rendered_images, before_images = render(prompt)
 
         prev_img_path = os.path.join(datadir, f"img.jpg")
         prev_img = load_image(prev_img_path)
         
         Q0 = quality_model.compute_quality(prev_img_path)
-        print(f"Q0: {Q0}")
-        
         S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
         print(f"S0: {S0}")
+        print(f"Scoring is done in {time.time() - start} seconds: S0:{S0} Q0:{Q0}")
+
         return {"Q0": Q0, "S0": S0}
         print(f"S0: {S0} - taken time: {time.time() - start}")
         print(f"S0: {S0} - taken time: {time.time() - start}")
