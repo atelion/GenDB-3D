@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # prompt = "ornate elven fountain with pearl inlays and flowing water effects"
     # prompt = "enchanted sword with glowing runes and crystalline hilt"
     # prompt = "cyberpunk vending machine with holographic display and neon trim"
-    prompt = "abandoned subway turnstile with rust stains and peeling paint"
+    prompt = "corrupted healing station with malfunctioning displays and broken tubes"
     prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
     # start = time.time()
     # prev_img = load_image(prev_img_path)

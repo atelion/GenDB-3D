@@ -40,7 +40,7 @@ def get_args():
 args = get_args()
 
 # Initialize models globally
-# rembg_model = Removebg()
+rembg_model = Removebg()
 # image_to_views_model = Image2Views(device=args.device, use_lite=args.use_lite)
 # views_to_mesh_model = Views2Mesh(args.mv23d_cfg_path, args.mv23d_ckt_path, args.device, use_lite=args.use_lite)
 text_to_image_model = Text2Image(pretrain=args.text2image_path, device=args.device, save_memory=args.save_memory)
@@ -61,6 +61,7 @@ pipeline = TrellisImageTo3DPipeline.from_pretrained("JeffreyXiang/TRELLIS-image-
 pipeline.cuda()
 
 def gen_3d(image, output_folder, simplify, texture_size):
+    # image = rembg_model(image)
     outputs = pipeline.run(
         image,        
         seed=42,        
@@ -195,6 +196,26 @@ def _text_to_3d(prompt: str, output_dir: str, simplify: float, texture_size: int
 
     # Stage 1: Text to Image
     start = time.time()
+    # res_rgb_pil = text_to_image_model(
+    #     prompt,
+    #     seed=args.t2i_seed,
+    #     steps=args.t2i_steps
+    # )
+    # res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
+    res_rgb_pil = Image.open("./img.jpg")
+    gen_3d(res_rgb_pil, output_folder, simplify, texture_size)
+    
+    print(f"Successfully generated: {output_folder}")
+    print(f"Generation time: {time.time() - start}")
+
+    return {"success": True, "path": output_folder}
+
+def image_to_3d(output_dir):
+    output_folder = output_dir
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Stage 1: Text to Image
+    start = time.time()
     res_rgb_pil = text_to_image_model(
         prompt,
         seed=args.t2i_seed,
@@ -209,6 +230,7 @@ def _text_to_3d(prompt: str, output_dir: str, simplify: float, texture_size: int
 
     return {"success": True, "path": output_folder}
 
+
 if __name__ == "__main__":
     
     # image = Image.open("bike.png")
@@ -217,11 +239,12 @@ if __name__ == "__main__":
     # prompt = "enchanted sword with glowing runes and crystalline hilt"
     # prompt = "ancient magical tome with metal clasps and glowing runes"
     # prompt = "steampunk pocket watch with brass gears and ticking mechanisms"
-    prompt = "toxic waste barrel with warning symbols and corroded metal"
-    prompt = "abandoned subway turnstile with rust stains and peeling paint"
+    # prompt = "toxic waste barrel with warning symbols and corroded metal"
+    prompt = "quantum storage box with temporal distortions and metallic sheen"
     # prompt = "quantum computer terminal with hologram projector and cooling vents"
     # extra_prompts = "anime"
-    extra_prompts = "Angled front view, solid color background, 3d model, high quality, detailed sub components"
+    extra_prompts = "Angled front view, solid color background, 3d model, high quality"
+    # extra_prompts = "Angled front view, solid color background, 3d model, high quality, detailed sub components"
     # extra_prompts = "Angled front view, solid color background, high quality, detailed textures, realistic lighting, emphasis on form and depth, suitable for 3D rendering."
     # extra_prompts = "anime, Angled front view, solid color background, 3d model, realistic lighting, emphasis on texture and depth, suitable for 3D rendering."
     # extra_prompts = "Angled front view, solid color background, detailed sub-components, suitable for 3D rendering, include relevant complementary objects (e.g., a stand for the clock, a decorative base for the sword) linked to the main object to create context and depth."
@@ -233,6 +256,6 @@ if __name__ == "__main__":
     #     steps=25
     # )
     print(f"{time.time() - start} seconds")
-    # _text_to_3d(enhanced_prompt, "./", 0.95, 1024)
+    _text_to_3d(enhanced_prompt, "./", 0.95, 1024)
     print(f"{time.time() - start} seconds")
-    uvicorn.run(app, host="0.0.0.0", port=args.port)
+    # uvicorn.run(app, host="0.0.0.0", port=args.port)
