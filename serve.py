@@ -41,7 +41,7 @@ def get_args():
 args = get_args()
 
 # Initialize models globally
-# rembg_model = Removebg()
+rembg_model = Removebg()
 # image_to_views_model = Image2Views(device=args.device, use_lite=args.use_lite)
 # views_to_mesh_model = Views2Mesh(args.mv23d_cfg_path, args.mv23d_ckt_path, args.device, use_lite=args.use_lite)
 text_to_image_model = Text2Image(pretrain=args.text2image_path, device=args.device, save_memory=args.save_memory)
@@ -86,8 +86,11 @@ async def validate(validation_url: str, timeout: int, prompt: str, DATA_DIR: str
     return None
 
 def gen_3d(image, output_folder):
+
+    res_rgba_pil = rembg_model(image)
+    
     outputs = pipeline.run(
-        image,        
+        res_rgba_pil,        
         seed=42,        
     )
     # GLB files can be extracted from the outputs
@@ -143,6 +146,17 @@ async def text_to_3d(data: RequestData):
         return {"success": True, "path": output_folder}
     except:
         return {"success": False, "path": output_folder}
+
+@app.post("/generate_from_image")
+async def image_to_3d(DATA_DIR: str = Body()):
+    if not os.path.exists(os.path.join(DATA_DIR, "img.jpg")):
+        raise HTTPException(status_code=400, detail="Image file not found")
+
+        # Load Image
+    res_rgb_pil = Image.open(os.path.join(DATA_DIR, "img.jpg"))
+    gen_3d(res_rgb_pil, DATA_DIR)
+
+    return {"success": True}
 
 
 def _text_to_3d(prompt: str, output_dir: str):
