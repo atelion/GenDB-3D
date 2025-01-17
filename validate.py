@@ -109,10 +109,7 @@ if __name__ == "__main__":
     
     init_model()
     DATA_DIR = "/workspace/GenDB-3D"
-    # prompt = "ornate elven fountain with pearl inlays and flowing water effects"
-    # prompt = "enchanted sword with glowing runes and crystalline hilt"
-    # prompt = "cyberpunk vending machine with holographic display and neon trim"
-    prompt = "abandoned subway turnstile with rust stains and peeling paint"
+    prompt = "neon cyberpunk street sign with flickering lights and holographic display"
     prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
     # start = time.time()
     # prev_img = load_image(prev_img_path)

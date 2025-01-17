@@ -31,7 +31,7 @@ async def _generate(generation_url: str, generation_timeout: int, prompt: str, D
             logging.error(f"An unexpected error occurred: {e} ({generation_url})")
 
 async def generate(prompt: str, simplify: float, texture_size: int):
-    generation_url = urllib.parse.urljoin("http://127.0.0.1:8093", "/generate/")
+    generation_url = urllib.parse.urljoin("http://127.0.0.1:8093", "/generate_from_sdxl/")
     generation_timeout = 200
     # prompt = "ancient bronze shield with serpent motif and verdigris patina"
     simplify = 0.95
@@ -90,7 +90,7 @@ def main():
     # enhanced_prompt = f"{prompt}, {extra_prompts}"
     # Open the file in read mode
     DATA_DIR = "/workspace/GenDB-3D/Extra/"
-    with open('awful_prompts.txt', 'r') as file:
+    with open('second_awful_prompts.txt', 'r') as file:
         # Read and print each line
         count = 0
         for line in file:

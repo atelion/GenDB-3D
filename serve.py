@@ -188,6 +188,63 @@ async def create_to_3d_shits(data: RequestData):
     except:
         return {"success": False, "path": output_folder}
 
+async def image_gen(image_url: str, timeout: int, prompt: str, DATA_DIR: str):
+    async with aiohttp.ClientSession() as session:
+        try:
+            print(f"=================================================")
+            client_timeout = aiohttp.ClientTimeout(total=float(timeout))
+            
+            async with session.post(image_url, timeout=client_timeout, json={"prompt": prompt, "DATA_DIR": DATA_DIR}) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    print(result["success"])
+                else:
+                    print(f"Validation failed. Please try again.: {response.status}")
+                return result
+        except aiohttp.ClientConnectorError:
+            print(f"Failed to connect to the endpoint. Try to access again: {image_url}.")
+        except TimeoutError:
+            print(f"The request to the endpoint timed out: {image_url}")
+        except aiohttp.ClientError as e:
+            print(f"An unexpected client error occurred: {e} ({image_url})")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e} ({image_url})")
+    
+    return None
+
+@app.post("/generate_from_sdxl")
+async def create_to_3d_shits(data: RequestData):
+    print("====================================")
+    print(data)
+    output_folder = data.DATA_DIR
+    prompt = data.prompt
+    simplify = 0.95
+    texture_size = 1024
+
+    os.makedirs(output_folder, exist_ok=True)
+    
+    # Stage 1: Text to Image
+    start = time.time()
+    image_url = urllib.parse.urljoin("http://127.0.0.1:8095", "/text2image/")
+    image_timeout = 100
+    flag = False
+    try:
+        result = await image_gen(image_url=image_url, timeout=image_timeout, prompt=prompt, DATA_DIR=output_folder)
+
+        res_rgb_pil = Image.open(os.path.join(output_folder, "img.jpg"))
+        print("----------Image is generated-----------")
+        
+    except:
+            print("Failed in image generation, hehehe")
+    
+    try:
+        gen_3d(res_rgb_pil, output_folder, simplify, texture_size)
+        print(f"Successfully generated: {output_folder}")
+        print(f"Generation time: {time.time() - start}")
+        return {"success": True, "path": output_folder}
+    except:
+        return {"success": False, "path": output_folder}
+
 
 def _text_to_3d(prompt: str, output_dir: str, simplify: float, texture_size: int):
     output_folder = output_dir
@@ -195,12 +252,13 @@ def _text_to_3d(prompt: str, output_dir: str, simplify: float, texture_size: int
 
     # Stage 1: Text to Image
     start = time.time()
-    res_rgb_pil = text_to_image_model(
-        prompt,
-        seed=args.t2i_seed,
-        steps=args.t2i_steps
-    )
-    res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
+    # res_rgb_pil = text_to_image_model(
+    #     prompt,
+    #     seed=args.t2i_seed,
+    #     steps=args.t2i_steps
+    # )
+    # res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
+    res_rgb_pil = Image.open("./img.jpg")
 
     gen_3d(res_rgb_pil, output_folder, simplify, texture_size)
     
@@ -213,15 +271,12 @@ if __name__ == "__main__":
     
     # image = Image.open("bike.png")
     # gen_3d(image, "outputs")
-    # prompt = "ornate elven fountain with pearl inlays and flowing water effects"
-    # prompt = "enchanted sword with glowing runes and crystalline hilt"
-    # prompt = "ancient magical tome with metal clasps and glowing runes"
-    # prompt = "steampunk pocket watch with brass gears and ticking mechanisms"
-    prompt = "toxic waste barrel with warning symbols and corroded metal"
-    prompt = "abandoned subway turnstile with rust stains and peeling paint"
-    # prompt = "quantum computer terminal with hologram projector and cooling vents"
+    
+    prompt = "steampunk pocket watch with exposed clockwork and brass patina"
+    
     # extra_prompts = "anime"
-    extra_prompts = "Angled front view, solid color background, 3d model, high quality, detailed sub components"
+    # extra_prompts = "Angled front view, solid color background, 3d model, high quality, detailed sub components"
+    extra_prompts = "Angled front view, solid color background, 3d model, detailed textures, low quality"
     # extra_prompts = "Angled front view, solid color background, high quality, detailed textures, realistic lighting, emphasis on form and depth, suitable for 3D rendering."
     # extra_prompts = "anime, Angled front view, solid color background, 3d model, realistic lighting, emphasis on texture and depth, suitable for 3D rendering."
     # extra_prompts = "Angled front view, solid color background, detailed sub-components, suitable for 3D rendering, include relevant complementary objects (e.g., a stand for the clock, a decorative base for the sword) linked to the main object to create context and depth."
