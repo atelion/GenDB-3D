@@ -78,7 +78,7 @@ async def validate(prompt: str):
     logging.info("Successfully validated")
 
 def main():
-    prompt = "coral reef teleporter with barnacles and water damage"
+    # prompt = "coral reef teleporter with barnacles and water damage"
     # prompt = "steampunk pocket watch with brass gears and ticking mechanisms"
     # prompt = "quantum computer terminal with hologram projector and cooling vents"
     # extra_prompts = "Angled front view, solid color background, 3d model, high quality, detailed sub components, anime style"
@@ -90,7 +90,7 @@ def main():
     # enhanced_prompt = f"{prompt}, {extra_prompts}"
     # Open the file in read mode
     DATA_DIR = "/workspace/GenDB-3D/Extra/"
-    with open('second_awful_prompts.txt', 'r') as file:
+    with open('/workspace/sixth_awful_prompts.txt', 'r') as file:
         # Read and print each line
         count = 0
         for line in file:
