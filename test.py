@@ -90,11 +90,13 @@ def main():
     # enhanced_prompt = f"{prompt}, {extra_prompts}"
     # Open the file in read mode
     DATA_DIR = "/workspace/GenDB-3D/Extra/"
-    with open('/workspace/sixth_awful_prompts.txt', 'r') as file:
+    with open('/workspace/seventh_awful_prompts.txt', 'r') as file:
         # Read and print each line
         count = 0
         for line in file:
             count += 1
+            if count == 3:
+                break
             if count % 100 == 0:
                 print(f"-------------------{count}---------------------\n")
             line = line.strip()
