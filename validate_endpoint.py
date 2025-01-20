@@ -57,9 +57,9 @@ async def validate(data: RequestData):
         print(f"S0: {S0}")
         print(f"Scoring is done in {time.time() - start} seconds: S0:{S0} Q0:{Q0}")
 
-        return {"Q0": Q0, "S0": S0}
-        print(f"S0: {S0} - taken time: {time.time() - start}")
-        print(f"S0: {S0} - taken time: {time.time() - start}")
+        # return {"Q0": Q0, "S0": S0}
+        # print(f"S0: {S0} - taken time: {time.time() - start}")
+        # print(f"S0: {S0} - taken time: {time.time() - start}")
         if S0 < 0.23:
             return 0
             

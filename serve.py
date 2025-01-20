@@ -275,8 +275,8 @@ if __name__ == "__main__":
     prompt = "steampunk pocket watch with exposed clockwork and brass patina"
     
     # extra_prompts = "anime"
-    # extra_prompts = "Angled front view, solid color background, 3d model, high quality, detailed sub components"
-    extra_prompts = "Angled front view, solid color background, 3d model, detailed textures, low quality"
+    extra_prompts = "Angled front view, solid color background, 3d model, high quality, detailed sub components"
+    
     # extra_prompts = "Angled front view, solid color background, high quality, detailed textures, realistic lighting, emphasis on form and depth, suitable for 3D rendering."
     # extra_prompts = "anime, Angled front view, solid color background, 3d model, realistic lighting, emphasis on texture and depth, suitable for 3D rendering."
     # extra_prompts = "Angled front view, solid color background, detailed sub-components, suitable for 3D rendering, include relevant complementary objects (e.g., a stand for the clock, a decorative base for the sword) linked to the main object to create context and depth."
@@ -288,6 +288,6 @@ if __name__ == "__main__":
     #     steps=25
     # )
     print(f"{time.time() - start} seconds")
-    # _text_to_3d(enhanced_prompt, "./", 0.95, 1024)
+    _text_to_3d(enhanced_prompt, "./", 0.95, 1024)
     print(f"{time.time() - start} seconds")
-    uvicorn.run(app, host="0.0.0.0", port=args.port)
+    # uvicorn.run(app, host="0.0.0.0", port=args.port)

@@ -28,7 +28,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def load_glb_as_mesh(glb_file, device='cpu'):
     # Load the .glb file using trimesh
-    print(glb_file)
+    # print(glb_file)
     mesh = trimesh.load(glb_file, file_type='glb', force="mesh")
     
     # Extract vertices, faces, and UV coordinates from the trimesh object

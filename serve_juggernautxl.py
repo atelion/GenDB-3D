@@ -43,7 +43,18 @@ async def image_gen(data: RequestData):
     images = pipe(prompt, num_inference_steps=50).images
     images[0].save(os.path.join(output_folder, "img.jpg"))    
     return {"success": True}
+
+def _image_gen(prompt):
+    print("====================================")
+    extra_prompts = "Angled front view, solid color background, 3D model, high quality"
+    output_folder = "/workspace/GenDB-3D"
+    images = pipe(prompt, num_inference_steps=50).images
+    images[0].save(os.path.join(output_folder, "img.jpg"))    
+    return {"success": True}
+
 if __name__ == "__main__":
     port = 8095
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    prompt = "crystal sword with rainbow refractions and ethereal glow"
+    _image_gen(prompt)
+    # uvicorn.run(app, host="0.0.0.0", port=port)
     
