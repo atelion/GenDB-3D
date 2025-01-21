@@ -6,10 +6,11 @@ import argparse
 from fastapi import FastAPI, HTTPException, Body
 import uvicorn
 import hashlib
-
+import urllib.parse
 from infer import Text2Image, Removebg, Image2Views, Views2Mesh, GifRenderer
-
+from diffusers import DiffusionPipeline
 app = FastAPI()
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -36,7 +37,9 @@ args = get_args()
 # rembg_model = Removebg()
 # image_to_views_model = Image2Views(device=args.device, use_lite=args.use_lite)
 # views_to_mesh_model = Views2Mesh(args.mv23d_cfg_path, args.mv23d_ckt_path, args.device, use_lite=args.use_lite)
-text_to_image_model = Text2Image(pretrain=args.text2image_path, device=args.device, save_memory=args.save_memory)
+# text_to_image_model = Text2Image(pretrain=args.text2image_path, device=args.device, save_memory=args.save_memory)
+pipe = DiffusionPipeline.from_pretrained("RunDiffusion/Juggernaut-XL-v9", torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
+pipe.to("cuda")
 if args.do_render:
     gif_renderer = GifRenderer(device=args.device)
 
@@ -53,7 +56,7 @@ from TRELLIS.trellis.utils import render_utils, postprocessing_utils
 pipeline = TrellisImageTo3DPipeline.from_pretrained("JeffreyXiang/TRELLIS-image-large")
 pipeline.cuda()
 
-def gen_3d(image, output_folder):
+def image_to_3d(image, output_folder):
     outputs = pipeline.run(
         image,        
         seed=42,        
@@ -68,95 +71,59 @@ def gen_3d(image, output_folder):
     )
     glb.export(os.path.join(output_folder, "mesh.glb"))
 
-@app.post("/generate_from_text")
-async def text_to_3d(prompt: str = Body()):
-    output_folder = os.path.join(args.save_folder, "text_to_3d")
-    os.makedirs(output_folder, exist_ok=True)
-
-    # Stage 1: Text to Image
-    start = time.time()
-    res_rgb_pil = text_to_image_model(
-        prompt,
-        seed=args.t2i_seed,
-        steps=args.t2i_steps
-    )
-    res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
-
-    # process_image_to_3d(res_rgb_pil, output_folder)
-    gen_3d(res_rgb_pil, output_folder)
-    
-    print(f"Successfully generated: {output_folder}")
-    print(f"Generation time: {time.time() - start}")
-
-    return {"success": True, "path": output_folder}
-
-@app.post("/generate_from_image")
-async def image_to_3d(image_path: str):
-    if not os.path.exists(image_path):
-        raise HTTPException(status_code=400, detail="Image file not found")
-
-    output_folder = os.path.join(args.save_folder, "image_to_3d")
-    os.makedirs(output_folder, exist_ok=True)
-
-    # Load Image
-    res_rgb_pil = Image.open(image_path)
-    process_image_to_3d(res_rgb_pil, output_folder)
-
-    return {"message": "3D model generated successfully from image", "output_folder": output_folder}
-
-def _text_to_3d(prompt: str, folder_path: str):
+def text_to_3d(prompt: str, folder_path: str):
     
     os.makedirs(folder_path, exist_ok=True)
 
     # Stage 1: Text to Image
     start = time.time()
-    res_rgb_pil = text_to_image_model(
-        prompt,
-        seed=args.t2i_seed,
-        steps=25
-    )
-    res_rgb_pil.save(os.path.join(folder_path, "img.jpg"))
-
+    
+    images = pipe(prompt, num_inference_steps=50).images
+    images[0].save(os.path.join(folder_path, "img.jpg"))    
+    res_rgb_pil = images[0]
     # process_image_to_3d(res_rgb_pil, output_folder)
-    gen_3d(res_rgb_pil, folder_path)
+    image_to_3d(res_rgb_pil, folder_path)
     
     print(f"Successfully generated: {folder_path}")
     print(f"Generation time: {time.time() - start}")
 
     return {"success": True, "path": folder_path}
 
-if __name__ == "__main__":
-    # image = Image.open("bike.png")
-    # gen_3d(image, "outputs")
-    # input_file = 'validator_prompts.txt'
-    input_file = 'input.txt'
-    db_directory = 'DB'
-    if not os.path.exists(db_directory):
-      os.makedirs(db_directory)
-    with open(input_file, 'r') as file:
-        for line in file:
-            # Remove any leading/trailing whitespace
-            line = line.strip()
-            if line:  # Ensure the line is not empty
-                # Create a hash of the line
-                line_hash = hashlib.sha256(line.encode()).hexdigest()
-                # Create a folder with the hash name
-                folder_path = os.path.join(db_directory, line_hash)
-                os.makedirs(folder_path, exist_ok=True)
-                print(f'Created folder: {folder_path}')
-                # Define the path for the text file to save the line
-                text_file_path = os.path.join(folder_path, 'prompt.txt')
-                # Save the line in the text file
-                with open(text_file_path, 'w') as text_file:
-                    text_file.write(line)
-                
-                prompt = line
-                extra_prompts = "Angled front view, solid color background, 3d model, high quality"
-                enhanced_prompt = f"{prompt}, {extra_prompts}"
-                _text_to_3d(enhanced_prompt, folder_path)
-                print("-----------------------------Generated!!!------------------------------\n")
 
-    # _text_to_3d("rusty oil barrel with chemical warnings and bullet holes")
+if __name__ == "__main__":
+    input_file = '/workspace/update_db/warning.txt'
+    db_directory = '/workspace/update_db/warndb'
+    os.makedirs(db_directory, exist_ok=True)
+    
+    inputfile = open(input_file, "r")
+    lines = inputfile.readlines()
+    
+    for id, line in enumerate(lines):
+        if id % 10 == 0:
+            print(id)
+        # Remove any leading/trailing whitespace
+        line = line.strip()
+        if line:  # Ensure the line is not empty
+            # Create a hash of the line
+            line_hash = hashlib.sha256(line.encode()).hexdigest()
+            # Create a folder with the hash name
+            folder_path = os.path.join(db_directory, line_hash)
+            os.makedirs(folder_path, exist_ok=True)
+            print(f'Created folder: {folder_path}')
+            # Define the path for the text file to save the line
+            text_file_path = os.path.join(folder_path, 'prompt.txt')
+            # Save the line in the text file
+            with open(text_file_path, 'w') as text_file:
+                text_file.write(line)
+            
+            prompt = line
+            extra_prompts = "Angled front view, solid color background, 3d model, high quality"
+            enhanced_prompt = f"{prompt}, {extra_prompts}"
+
+            text_to_3d(enhanced_prompt, folder_path)
+            print("-----------------------------Generated!!!------------------------------\n")
+    inputfile.close()
+    
     
 
 
