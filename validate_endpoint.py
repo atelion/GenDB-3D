@@ -47,7 +47,7 @@ async def validate(data: RequestData):
         print(f"----------------- Validation started : {prompt} -----------------")
         start = time.time()
         prompt = prompt + " " + EXTRA_PROMPT
-        # rendered_images, before_images = render(prompt)
+        rendered_images, before_images = render(prompt)
 
         prev_img_path = os.path.join(datadir, f"img.jpg")
         prev_img = load_image(prev_img_path)
