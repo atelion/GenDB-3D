@@ -49,8 +49,8 @@ def validate(prompt: str):
         # S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
         S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path)
         print(f"S0: {S0} - taken time: {time.time() - start}")
-        # if S0 < 0.23:
-            # return 0
+        if S0 < 0.23:
+            return 0
             
         Ri = detect_outliers([image_model.compute_clip_similarity(prev_img, img) for img in rendered_images])
         
@@ -109,13 +109,13 @@ if __name__ == "__main__":
     
     init_model()
     DATA_DIR = "/workspace/GenDB-3D"
-    prompt = "crystal sword with rainbow refractions and ethereal glow"
+    prompt = "haunted mirror frame with tarnished silver and ghostly residue"
     prev_img_path = os.path.join(DATA_DIR, f"img.jpg")
     # start = time.time()
     # prev_img = load_image(prev_img_path)
     # print(prev_img_path)
-    Q0 = quality_model.compute_quality(prev_img_path)
-    print(f"Q0: {Q0}")
+    # Q0 = quality_model.compute_quality(prev_img_path)
+    # print(f"Q0: {Q0}")
     # S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
     # S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path)
     # print(f"S0: {S0} - taken time: {time.time() - start}")

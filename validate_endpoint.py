@@ -96,6 +96,27 @@ async def validate(data: RequestData):
         return total_score
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/image_validation")
+async def validate(data: RequestData):
+    print(data)
+    datadir = data.DATA_DIR
+    prompt = data.prompt
+    try:
+        print(f"----------------- Validation started : {prompt} -----------------")
+        start = time.time()
+        prompt = prompt + " " + EXTRA_PROMPT
+        
+        prev_img_path = os.path.join(datadir, f"img.jpg")        
+        Q0 = quality_model.compute_quality(prev_img_path)
+        S0 = text_model.compute_clip_similarity_prompt(prompt, prev_img_path) if Q0 > 0.4 else 0
+        print(f"S0: {S0}")
+        print(f"Scoring is done in {time.time() - start} seconds: S0:{S0} Q0:{Q0}")
+        if S0 < 0.23:
+            return 0
+        return S0
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 def detect_outliers(data, threshold=1.1):
     # Calculate Q1 and Q3

@@ -46,23 +46,27 @@ async def get_scores(prompt, old_path: str, new_path: str):
         print("Failed in validation for new, hehehe")
     
     print(f"Old result: {result_old}\nNew result: {result_new}\n")
+    with open("/workspace/compare_result.txt", "a") as history:
+        history.write(f"{prompt} : {result_old} : {result_new}\n")
     if result_old > result_new:
         shutil.rmtree(new_path)
 
 
 def main():
     input_file = '/workspace/update_db/warning.txt'
-    new_directory = '/workspace/update_db/warndb'
+    new_directory = '/workspace/warndb'
     old_directory = '/workspace/DB'
     
     inputfile = open(input_file, "r")
     lines = inputfile.readlines()
     
     for id, line in enumerate(lines):
+        id += 1
         if id % 10 == 0:
             print(id)
         # Remove any leading/trailing whitespace
         line = line.strip()
+        print(line)
         if line:  # Ensure the line is not empty
             # Create a hash of the line
             line_hash = hashlib.sha256(line.encode()).hexdigest()

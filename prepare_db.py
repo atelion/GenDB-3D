@@ -109,6 +109,11 @@ if __name__ == "__main__":
             # Create a folder with the hash name
             folder_path = os.path.join(db_directory, line_hash)
             os.makedirs(folder_path, exist_ok=True)
+            mesh_path = os.path.join(folder_path, "mesh.glb")
+            img_path = os.path.join(folder_path, "img.jpg")
+            if os.path.exists(mesh_path) and os.path.exists(img_path):
+                print("All files exist")
+                continue
             print(f'Created folder: {folder_path}')
             # Define the path for the text file to save the line
             text_file_path = os.path.join(folder_path, 'prompt.txt')
@@ -117,7 +122,7 @@ if __name__ == "__main__":
                 text_file.write(line)
             
             prompt = line
-            extra_prompts = "Angled front view, solid color background, 3d model, high quality"
+            extra_prompts = "solid color background, 3d model"
             enhanced_prompt = f"{prompt}, {extra_prompts}"
 
             text_to_3d(enhanced_prompt, folder_path)

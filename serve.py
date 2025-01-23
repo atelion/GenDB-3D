@@ -13,8 +13,7 @@ from infer import Text2Image, Removebg, Image2Views, Views2Mesh, GifRenderer
 from pydantic import BaseModel
 
 class RequestData(BaseModel):
-    prompt: str
-    DATA_DIR: str
+    output_dir: str
     
 app = FastAPI()
 
@@ -87,7 +86,7 @@ def gen_3d(image, output_folder, simplify, texture_size):
 async def text_to_3d(data: RequestData):
     print("====================================")
     print(data)
-    output_folder = data.DATA_DIR
+    output_folder = data.output_dir
     prompt = data.prompt
     simplify = 0.95
     texture_size = 1024
@@ -102,6 +101,7 @@ async def text_to_3d(data: RequestData):
         steps=args.t2i_steps
     )
     res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
+
     try:
         gen_3d(res_rgb_pil, output_folder, simplify, texture_size)
         print(f"Successfully generated: {output_folder}")
@@ -138,7 +138,7 @@ async def validate(validation_url: str, timeout: int, prompt: str, DATA_DIR: str
 async def create_to_3d_shits(data: RequestData):
     print("====================================")
     print(data)
-    output_folder = data.DATA_DIR
+    output_folder = data.output_dir
     print(f"--------------{output_folder}---------------")
     prompt = data.prompt
     simplify = 0.95
@@ -226,7 +226,7 @@ async def create_to_3d_shits(data: RequestData):
     # Stage 1: Text to Image
     start = time.time()
     image_url = urllib.parse.urljoin("http://127.0.0.1:8095", "/text2image/")
-    image_timeout = 100
+    image_timeout = 40
     flag = False
     try:
         result = await image_gen(image_url=image_url, timeout=image_timeout, prompt=prompt, DATA_DIR=output_folder)
@@ -235,8 +235,28 @@ async def create_to_3d_shits(data: RequestData):
         print("----------Image is generated-----------")
         
     except:
-            print("Failed in image generation, hehehe")
+            print("Failed in image generation, hehehe😡😡😡😡😡😡😡")
     
+    try:
+        gen_3d(res_rgb_pil, output_folder, simplify, texture_size)
+        print(f"Successfully generated: {output_folder}")
+        print(f"Generation time: {time.time() - start}")
+        return {"success": True, "path": output_folder}
+    except:
+        return {"success": False, "path": output_folder}
+
+
+@app.post("/juggernautxl_to_3d")
+async def juggernautxl_to_3d(data: RequestData):
+    print(f"================={data.output_dir}===================")
+    start = time.time()
+    output_folder = data.output_dir
+    simplify = 0.95
+    texture_size = 1024
+
+    os.makedirs(output_folder, exist_ok=True)
+    
+    res_rgb_pil = Image.open(os.path.join(output_folder, "img.jpg"))
     try:
         gen_3d(res_rgb_pil, output_folder, simplify, texture_size)
         print(f"Successfully generated: {output_folder}")
@@ -272,7 +292,7 @@ if __name__ == "__main__":
     # image = Image.open("bike.png")
     # gen_3d(image, "outputs")
     
-    prompt = "steampunk pocket watch with exposed clockwork and brass patina"
+    prompt = "a desert raider's curved sword with sand-worn leather and bronze pommel"
     
     # extra_prompts = "anime"
     extra_prompts = "Angled front view, solid color background, 3d model, high quality, detailed sub components"
@@ -281,13 +301,13 @@ if __name__ == "__main__":
     # extra_prompts = "anime, Angled front view, solid color background, 3d model, realistic lighting, emphasis on texture and depth, suitable for 3D rendering."
     # extra_prompts = "Angled front view, solid color background, detailed sub-components, suitable for 3D rendering, include relevant complementary objects (e.g., a stand for the clock, a decorative base for the sword) linked to the main object to create context and depth."
     enhanced_prompt = f"{prompt}, {extra_prompts}"
-    start = time.time()
+    
     # res_rgb_pil = text_to_image_model(
     #     prompt,
     #     seed=42,
     #     steps=25
     # )
-    print(f"{time.time() - start} seconds")
-    _text_to_3d(enhanced_prompt, "./", 0.95, 1024)
-    print(f"{time.time() - start} seconds")
-    # uvicorn.run(app, host="0.0.0.0", port=args.port)
+    
+    # _text_to_3d(enhanced_prompt, "./", 0.95, 1024)
+    
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
