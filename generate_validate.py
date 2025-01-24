@@ -3,14 +3,12 @@ import os
 import shutil
 import time
 import numpy as np
-import random
 from validation.text_clip_model import TextModel
 from validation.image_clip_model import ImageModel
 from validation.quality_model import QualityModel
 
-from infer import Text2Image
 from rendering import render, load_image
-
+import argparse
 
 from diffusers import DiffusionPipeline
 import torch
@@ -73,7 +71,19 @@ def text_to_image(prompt: str, output_folder: str):
         return False
 
 if __name__ == "__main__":
-    start_index = 0
+
+    # Create an argument parser
+    parser = argparse.ArgumentParser(description="Description of your program")
+
+    # Add arguments to the parser
+    parser.add_argument("--index", type=int, help="Start index", required=False, default=0)
+    
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Access the arguments
+    
+    start_index = args.index
     bad_prompt_file = "/workspace/bad_prompts.txt"
     good_extra_file = "/workspace/good_extra_prompt.txt"
     base_folder = "/workspace/Storage"
@@ -116,6 +126,7 @@ if __name__ == "__main__":
                     file.write(f"{extra_prompt}\n")
                 break
         if score_flag == False:
+            shutil.rmtree(output_folder)
             with open(bad_prompt_file, "a") as file:
                 file.write(f"{prompt}\n")
             
