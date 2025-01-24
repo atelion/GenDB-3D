@@ -1,22 +1,30 @@
 import hashlib
 import os
+import shutil
 import time
 import numpy as np
-from fastapi import HTTPException
 import random
 from validation.text_clip_model import TextModel
 from validation.image_clip_model import ImageModel
 from validation.quality_model import QualityModel
 
+from infer import Text2Image
 from rendering import render, load_image
 
-EXTRA_PROMPT = 'anime'
 
+from diffusers import DiffusionPipeline
+import torch
+from PIL import Image
+import time
+import os
+import torch
+import time
+from PIL import Image
 
 text_model = TextModel()
 quality_model = QualityModel()
 
-
+EXTRA_PROMPT = 'anime'
         
 def init_model():
     print("loading models")
@@ -46,58 +54,66 @@ def validate(prompt: str, input_folder_path: str):
         print(f"S0: {S0} - taken time: {time.time() - start}")
         if S0 < 0.23:
             return 0
+        return S0
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Failed in validation {e}")
 
 
-def detect_outliers(data, threshold=1.1):
-    # Calculate Q1 and Q3
-    sorted_data = sorted(data)
-    Q1 = np.percentile(sorted_data, 25)
-    Q3 = np.percentile(sorted_data, 75)
-    
-    # Calculate IQR
-    IQR = Q3 - Q1
-    
-    # Determine bounds
-    lower_bound = Q1 - threshold * IQR
-    upper_bound = Q3 + threshold * IQR
-    
-    # Identify non-outliers
-    non_outliers = [x for x in data if lower_bound <= x <= upper_bound]
-    
-    return non_outliers
-from infer import Text2Image
-text2image_path = "weights/hunyuanDiT"
-device="cuda"
-save_memory = False
-
-text_to_image_model = Text2Image(pretrain=text2image_path, device=device, save_memory=save_memory)
-
-def text_to_image(prompt: str, t2i_seed: int, t2i_steps: int, output_folder: str):
+def text_to_image(prompt: str, output_folder: str):
     start = time.time()
-    res_rgb_pil = text_to_image_model(
-        prompt,
-        seed=t2i_seed,
-        steps=t2i_steps
-    )
+    pipe = DiffusionPipeline.from_pretrained("RunDiffusion/Juggernaut-XL-v9", torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
+    pipe.to("cuda")
     
-    res_rgb_pil.save(os.path.join(output_folder, "img.jpg"))
+    try:
+        images = pipe(prompt, num_inference_steps=50).images
+        images[0].save(os.path.join(output_folder, "img.jpg"))
+        return True
+    except Exception as e:
+        print(f"Failed in generation {e}")
+        return False
 
 if __name__ == "__main__":
-    output_folder = "test_dir"
+    bad_prompt_file = "/workspace/bad_prompts.txt"
+    good_extra_file = "/workspace/good_extra_prompt.txt"
+    base_folder = "/workspace/Storage"
+    os.makedirs(base_folder, exist_ok=True)
     init_model()
     print("Models are initialized!!!")
-    prompt = "enchanted staff with floating crystals and vine wrappings"
+    Extra_prompts = [
+                "solid color background, 3D model"
+                " ",
+                "Angled front view, solid color background, 3d model, high quality",
+                "Angled front view, solid color background, detailed sub-components, suitable for 3D rendering, include relevant complementary objects (e.g., a stand for the clock, a decorative base for the sword) linked to the main object to create context and depth.",
+            ]
     start = time.time()
     
-    for i in range(5):
-        seed = random.randint(0, 50)
-        print(seed)
-        text_to_image(prompt, 31, 35, output_folder)
-        score = validate(prompt, output_folder)
-        print(score)
-        if score != 0:
-            break
-                
+    inputfile = open("/workspace/all_prompts.txt", "r")
+
+    lines = inputfile.readlines()
+    for id, line in enumerate(lines):
+        if id % 100 == 0:
+            print(f"{id} th image is generated!!!!")
+        print(line)
+        prompt = line.strip()
+
+        # Create a folder with the hash name
+        output_folder = os.path.join(base_folder, hashlib.sha256(prompt.encode()).hexdigest())
+        os.makedirs(output_folder, exist_ok=True)
+
+        score_flag = False
+        for extra_prompt in Extra_prompts:
+            enhanced_prompt = f"{prompt}, {extra_prompt}"
+            if text_to_image(enhanced_prompt, output_folder):
+                score = validate(prompt, output_folder)
+                if score == 0:                                
+                    continue
+                score_flag = True
+                with open(good_extra_file, "a") as file:
+                    file.write(f"{extra_prompt}\n")
+                break
+        if score_flag == False:
+            with open(bad_prompt_file, "a") as file:
+                file.write(f"{prompt}\n")
+            
+        
     print(f"================================={time.time()-start}===============================================")
