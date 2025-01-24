@@ -73,6 +73,7 @@ def text_to_image(prompt: str, output_folder: str):
         return False
 
 if __name__ == "__main__":
+    start_index = 0
     bad_prompt_file = "/workspace/bad_prompts.txt"
     good_extra_file = "/workspace/good_extra_prompt.txt"
     base_folder = "/workspace/Storage"
@@ -90,7 +91,10 @@ if __name__ == "__main__":
     inputfile = open("/workspace/all_prompts.txt", "r")
 
     lines = inputfile.readlines()
+
     for id, line in enumerate(lines):
+        if id < start_index:
+            continue
         if id % 100 == 0:
             print(f"{id} th image is generated!!!!")
         print(line)
